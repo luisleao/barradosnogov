@@ -1,0 +1,254 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+
+	<title>Consulta Impedimentos</title>
+
+
+	<!-- viewport meta to reset iPhone inital scale -->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="HandheldFriendly" content="true"/>
+
+
+	<link rel="stylesheet" type="text/css" href="style.css" media="screen, handheld" />
+	<link rel="stylesheet" type="text/css" href="enhanced.css" media="screen and (min-width: 40.5em)" />
+	<!--[if (lt IE 9)&(!IEMobile)]>
+	<link rel="stylesheet" type="text/css" href="enhanced.css" />
+	<![endif]-->
+	<script type="text/javascript" src="js/modernizr.js"></script>
+
+	<!-- css3-mediaqueries.js for IE8 or older -->
+	<!--[if lt IE 9]>
+		<script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
+	<![endif]-->
+
+
+
+	<style type="text/css">
+
+		ul li, ul li a{
+
+			-webkit-transition: all .3s ease-in-out;
+			-moz-transition: all .3s ease-in-out;
+			-o-transition: all .3s ease-in-out;
+			transition: all .3s ease-in-out;
+
+		}
+
+
+		/* REMOVER ISSO */
+		.spacer {
+			margin-bottom: 50px;
+			padding: 0;
+			overflow: hidden;
+			/*display: none;*/
+		}
+		
+		#detalhe_empresa {
+			display: block !important;
+		}
+
+
+		.header {
+			padding: 0 .3em;
+		}
+
+		.detalhe_impedimento {
+			padding: 0 1em .5em;
+			font-size: .9em;
+			/*display: none;*/
+		}
+
+
+		.list {
+			margin: 2em 0;
+		}
+
+		.list li {
+			background-color: #ababab;
+			margin-bottom: 0.05em;
+			padding: 0 .2em;
+		}
+		.list li:hover {
+			background-color: #333;
+		}
+
+		.list li:hover a {
+			color: #fff;
+		}
+
+		.list li a {
+			display: block;
+			padding: 0.2em;
+			color: #000;
+		}
+
+
+		#result .list a {
+			display: block;
+		}
+		#result .list .id {
+			display: block;
+			font-size: .8em;
+			color: #777;
+		}
+
+
+		header h1 a {
+			color: #fff !important;
+		}
+
+		.footer {
+			padding: .5em;
+		}
+
+
+
+
+		#consulta {
+
+			background: -moz-linear-gradient(top, #333 0%, rgba(255, 255, 255, 0) 100%); 
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#333), color-stop(100%,rgba(255, 255, 255, 0))); 
+			background: -webkit-linear-gradient(top, #333 0%,rgba(255, 255, 255, 0) 100%); 
+			background: -o-linear-gradient(top, #333 0%,rgba(255, 255, 255, 0) 100%);
+			background: -ms-linear-gradient(top, #333 0%,rgba(255, 255, 255, 0) 100%); 
+			background: linear-gradient(top, #333 0%,rgba(255, 255, 255, 0) 100%);
+
+
+		}
+
+
+
+		small {
+			font-size: .7em;
+		}
+
+	</style>
+
+
+	<script type="text/javascript">
+
+
+		var ehNumero = function(numero) {
+			var patt = /(^\d{1,}$)/;
+			return patt.test(numero);
+		};
+
+
+		window.addEventListener("load",function() {
+
+			// Set a timeout...
+			/*
+			setTimeout(function(){
+				// Hide the address bar!
+				window.scrollTo(0, 1);
+			}, 0);
+			*/
+		});
+
+	</script>
+
+</head>
+
+<body>
+
+
+	<div id="pagewrap">
+
+		<header role="banner">
+	    	<div>
+	            <h1 class="logo"><a href="#">Consulta Impedimentos</a></h1>
+	        </div>
+		</header><!--end .header-->
+
+
+
+
+		<div id="consulta" class="spacer">
+	            <form id="search" action="#" method="post" class="search">
+	                <fieldset>
+	                    <legend>Procurar empresa ou pessoa física impedida</legend>
+	                    <label for="search-data">Procurar</label>
+	                    <input type="search" id="search-data" placeholder="CPF, CNPJ, Nome ou Razão Social" />
+	                    <input type="submit" value="Consultar" />
+	                </fieldset>
+	            </form>
+
+		</div>
+
+
+
+
+		<div id="result" class="spacer">
+
+			<div class="header">
+				<h1>Resultado da busca por "[FULANO]"</h1>
+				<h2>[3 registros encontrados]</h2>
+			</div>
+
+			<ul class="list">
+				<li><a href="#"><span class="nome">FULANO &amp; COMPANHIA ARTIGOS ESPORTIVOS LTDA</span> <span class="id">12.345.678/0001-00</span></a></li>
+				<li><a href="#"><span class="nome">INCORPORADORA FULANO S/A</span> <span class="id">12.345.678/0001-00</span></a></li>
+				<li><a href="#"><span class="nome">FULANO DE OLIVEIRA</span> <span class="id">123.456.789-00</span></a></li>
+			</ul>
+
+		</div>
+
+
+
+
+
+
+		<div id="detalhe_empresa" class="spacer">
+			
+			<div class="header">
+				<h1>12.345.678/0001-00</h1>
+				<h2>Fulano &amp; Companhia Artigos Esportivos Ltda.</h2>
+			</div>
+
+			<ul class="list">
+
+				<li>
+					<a href="#" class="top">CAIXA ECONÔMICA FEDERAL</a>
+					<div class="detalhe_impedimento">
+						Data Início Sanção	02/05/2013<br/>
+						Data Final Sanção	01/05/2014<br/>
+						Origem Informações	Diário Oficial da União Seção 3 pág 082<br/>
+						Data Origem Informações	12/07/2013<br/>
+						Tipo Sanção	Suspensão - Lei de Licitações<br/>
+					</div>
+				</li>
+
+
+				<li>
+					<a href="#" class="top">MINISTERIO DA CIENCIA, TECNOLOGIA E INOVACAO</a>
+					<div class="detalhe_impedimento">
+
+						Número Convênio	428219<br/>
+						Motivo Impedimento	IRREGULARIDADES NA EXECUÇÃO<br/>
+					</div>
+				</li>
+
+
+
+			</ul>
+
+		</div>
+
+
+
+
+		<div class="footer">
+			<small id="disclaimer">
+				[disclaimer do app]<br/>[licença Creative Commons BY-CC-NA]
+			</small>
+		</div>
+
+
+	</div>
+
+</body>
+</html>
