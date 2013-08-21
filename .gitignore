@@ -1,4 +1,4 @@
 
 scripts/importa_old.py
-download/*
-raw/*
+download
+raw

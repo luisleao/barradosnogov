@@ -1,11 +1,8 @@
 
 
+#OK		TODO: data_hora cadastro e update
+#TODO: criar indice separado para CEIS e CEPIM
 
-#TODO: data_hora cadastro e update
-#TODO: salvar no ElasticSearch
-
-#TODO: listar itens para baixar com a data atual
-#TODO: baixar e descompactar itens
 
 
 
@@ -20,6 +17,12 @@ import urllib2
 import json
 from StringIO import StringIO
 import zipfile
+
+import codecs
+
+
+
+
 
 
 
@@ -46,12 +49,22 @@ def check_transparencia(tipo):
 
 def download_file(last):
 	print "baixando arquivo %(filename)s..." % last
+	zipfolder = "../download/%(filename)s" % last
 	zipdata = StringIO()
 	zipdata.write(urllib2.urlopen(url_download % last).read())
-	zipfolder = "../download/%(filename)s" % last
 	with zipfile.ZipFile(zipdata) as myzip:
 		myzip.extractall(zipfolder)
 	return zipfolder
+
+
+def decode_file(filename):
+	print "decoding %s..." % filename
+	decoded_file = "%s.decoded" % filename
+	with codecs.open(filename, 'r', encoding='iso-8859-1') as infile:
+		with codecs.open(decoded_file, 'w', encoding='utf-8') as outfile:
+			for line in infile:
+				outfile.write(line)
+	return decoded_file
 
 
 def save_file(filename, json_data):
@@ -66,16 +79,12 @@ def save_file(filename, json_data):
 
 def save_elasticsearch():
 	print 'Connecting to ES...'
-	conn = pyes.ES(config["server"]) #, encoder="iso-8859-1")
+	conn = pyes.ES(config["server"])
 	try:
 		print 'Creating index...'
 		conn.indices.create_index("impedimentos")
 	except:
 		pass
-
-	print "ES encoder: "
-	print conn.encoder
-	print ""
 
 
 	mapping = {
@@ -88,19 +97,22 @@ def save_elasticsearch():
     }
 
 	print 'Mapping...'
-	conn.indices.put_mapping("impedimento", {'properties': mapping}, ["impedimentos"])
+	conn.indices.put_mapping("CEIS", {'properties': mapping}, ["impedimentos"])
+	conn.indices.put_mapping("CEPIM", {'properties': mapping}, ["impedimentos"])
     
 	erros = 0
 	print 'Indexing!'
 	for v in impedimentos:
 		#print v
 		p = impedimentos[v]
-		conn.index(p, 'impedimentos', 'impedimento', p['documento'], bulk=True)
-		#try:
-		#	conn.index(p, 'monitor', 'registro', p['id'], bulk=True)
-		#except:
-		#	print "erro INDICE"
-		#	erros = erros + 1
+		#print p
+
+		conn.index(p, 'impedimentos', p['tabela'], p['documento'], bulk=True)
+		try:
+			conn.index(p, 'impedimentos', p['tabela'], p['documento'], bulk=True)
+		except:
+			print "erro INDICE"
+			erros = erros + 1
 
 	print "%d erro(s)." % erros
 
@@ -115,10 +127,16 @@ def process_CEIS(force=False):
 	print ">>> CEIS <<<"
 	#TODO: verificar se ja existe o arquivo/processamento e zerar se FORCE=TRUE
 	last = check_transparencia("CEIS")
-	folder = download_file(last)
+
+	folder = "../download/%(filename)s" % last
+	if not os.path.exists(folder) or force:
+		folder = download_file(last)
+
 	file_to_process = "%s/%s" % (folder, listdir(folder)[0])
+	decoded_file = decode_file(file_to_process)
+
 	print "processando CEIS..."
-	with open(file_to_process, 'r') as raw:
+	with open(decoded_file, 'r') as raw:
 		for a in raw.readlines()[1:]:
 			#try:
 				b = a.replace('\r\n', '').split('\t')
@@ -135,9 +153,10 @@ def process_CEIS(force=False):
 						"tipo_pessoa": "fisica" if len(documento) == 11 else "juridica",
 						"data_cadastro": "",
 						"data_update": "",
-						"raw":[]
+						"raw":[],
+						"tabela": "CEIS"
 					}
-				impedimento["raw"].append(a.replace('\r\n', ''))
+				impedimento["raw"].append(a.decode("iso-8859-1").replace('\r\n', ''))
 				impedimentos[documento] = impedimento
 			#except:
 		#	print "error on " + b
@@ -148,10 +167,19 @@ def process_CEPIM(force=False):
 	print ">>> CEPIM <<<"
 	#TODO: verificar se ja existe o arquivo/processamento e zerar se FORCE=TRUE
 	last = check_transparencia("CEPIM")
-	folder = download_file(last)
+
+	folder = "../download/%(filename)s" % last
+	if not os.path.exists(folder) or force:
+		folder = download_file(last)
+
+	#if os.path.exists(folder) and not force:
+	#	print "arquivo ja existe"
+	#	return
+
 	file_to_process = "%s/%s" % (folder, listdir(folder)[0])
+	decoded_file = decode_file(file_to_process)
 	print "processando CEPIM..."
-	with open(file_to_process, 'r') as raw:
+	with open(decoded_file, 'r') as raw:
 		for a in raw.readlines()[1:]:
 			#try:
 				b = a.replace('\r\n', '').split('\t')
@@ -162,14 +190,15 @@ def process_CEPIM(force=False):
 				else:
 					impedimento = {
 						"documento": documento,
-						"nome": b[1].decode("iso-8859-1"),
+						"nome": b[1].decode("iso-8859-1").encode('utf8'),
 						"origem": "%s" % (b[3]),
 						"tipo_pessoa": "fisica" if len(documento) == 11 else "juridica",
 						"data_cadastro": "",
 						"data_update": "",
-						"raw":[]
+						"raw":[],
+						"tabela": "CEPIM"
 					}
-				impedimento["raw"].append(a.replace('\r\n', ''))
+				impedimento["raw"].append(a.decode("iso-8859-1").encode('utf8').replace('\r\n', ''))
 				impedimentos[documento] = impedimento
 			#except:
 			#	print "error on " + b		
@@ -181,25 +210,10 @@ def process_CEPIM(force=False):
 process_CEIS()
 process_CEPIM()
 
+print "total de impedimentos: %s." % len(impedimentos)
+
 save_file("../raw/impedimentos.json", impedimentos)
+
 save_elasticsearch()
-
-
-
-
-
-
-
-#OK		TODO: verificar se existe a pasta
-#OK		TODO: baixar e extrair o arquivo na pasta correspondente
-#TODO: abrir o arquivo e importar para ElasticSearch
-
-
-
-
-
-
-
-
 
 
