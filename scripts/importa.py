@@ -1,205 +1,81 @@
-import json
-from datetime import datetime
-import pyes, pprint
 
 
 
 #TODO: data_hora cadastro e update
 #TODO: salvar no ElasticSearch
 
+#TODO: listar itens para baixar com a data atual
+#TODO: baixar e descompactar itens
 
 
+
+import json
+from datetime import datetime
+import pyes, pprint
+
+
+import os
+from os import listdir
+import urllib2
+import json
+from StringIO import StringIO
+import zipfile
+
+
+
+config = {
+	"server": "http://127.0.0.1:9200"
+}
 
 
 impedimentos = {}
 
+url_lista = 'http://arquivos.portaldatransparencia.gov.br/downloads.asp?c=%s'
+url_download = "http://arquivos.portaldatransparencia.gov.br/downloads.asp?a=%(ano)s&m=%(mes)s&d=%(dia)s&consulta=%(tipo)s"
 
 
-def ceis():
-	print 'Getting CEIS...'
-	ceis_raw = open('../raw/20130723_ceis.csv', 'r')
-
-	for a in ceis_raw.readlines()[1:]:
-		#try:
-			b = a.replace('\r\n', '').split('\t')
-			impedimento = {}
-			documento = b[7]
-			#print documento
-
-			if impedimentos.has_key(documento):
-				impedimento = impedimentos[documento]
-
-			else: #"sem impedimento"
-				impedimento = {
-					"documento": documento,
-					"nome": b[8].decode("iso-8859-1"),
-					"origem": "%s (%s)" % (b[2], b[3]),
-					"tipo_pessoa": "fisica" if len(documento) == 11 else "juridica",
-					"data_cadastro": "",
-					"data_update": "",
-					"raw":[]
-				}
-
-			impedimento["raw"].append(a.replace('\r\n', ''))
-		#except:
-		#	print "error on " + b
-	return
+def check_transparencia(tipo):
+	print "verificando dados de %s..." % tipo
+	jsonp = urllib2.urlopen(url_lista % tipo).read()
+	j = json.loads(jsonp[ jsonp.index("(")+1 : jsonp.rindex(")") ])
+	last_date = j[-1]
+	last_date["tipo"] = tipo
+	last_date["filename"] = "%(tipo)s_%(ano)s%(mes)s%(dia)s" % last_date
+	return last_date
 
 
-def cepim():
-	print 'Getting CEPIM...'
-	cepim_raw = open('../raw/20130801_cepim.csv', 'r')
+def download_file(last):
+	print "baixando arquivo %(filename)s..." % last
+	zipdata = StringIO()
+	zipdata.write(urllib2.urlopen(url_download % last).read())
+	zipfolder = "../download/%(filename)s" % last
+	with zipfile.ZipFile(zipdata) as myzip:
+		myzip.extractall(zipfolder)
+	return zipfolder
 
-	for a in cepim_raw.readlines()[1:]:
-		#try:
-			b = a.replace('\r\n', '').split('\t')
 
-			impedimento = {}
-			documento = b[0]
-
-			if impedimentos.has_key(documento):
-				impedimento = impedimentos[documento]
-
-			else:
-				impedimento = {
-					"documento": documento,
-					"nome": b[1].decode("iso-8859-1"),
-					"origem": "%s" % (b[3]),
-					"tipo_pessoa": "fisica" if len(documento) == 11 else "juridica",
-					"data_cadastro": "",
-					"data_update": "",
-					"raw":[]
-				}
-
-			impedimento["raw"].append(a.replace('\r\n', ''))
-			impedimentos[documento] = impedimento
-		#except:
-		#	print "error on " + b
-	return
+def save_file(filename, json_data):
+	print "salvando arquivo json..."
+	with open(filename, "w") as the_file:
+		the_file.write(json.dumps(json_data, encoding="iso-8859-1"))
+	print "file saved"
 
 
 
 
 
-
-"""
-[
-	'31/12/2012', 
-	'30/12/2017', 
-	'MINIST\xc9RIO P\xdaBLICO FEDERAL', 
-	'--', 
-	'Di\xe1rio Oficial da Uni\xe3o Se\xe7\xe3o 1 p\xe1g 306', 
-	'31/12/2012', 
-	'Impedimento - Lei do Preg\xe3o', 
-	'04875253000160', 
-	'Ergo Center Promo\xe7\xe3o de Sa\xfade, Ergonomia eEventos Ltda-ME.', 
-	'ERGO CENTER - PROMOCAO DA SAUDE, ERGONOMIA E EVENTOS LTDA', 
-	'\x00', 
-	'ES'
-]
-
-[
-	'00057491000107', 
-	'CONSORCIO INTERMUNICIPAL DO VALE DO JIQUIRICA', 
-	'401004', 
-	'MINISTERIO DO MEIO AMBIENTE', 
-	'IRREGULARIDADES NA PRESTA\xc3\x87\xc3\x83O DE CONTAS (ATRASO, OMISS\xc3\x83O OU IMPUGNA\xc3\x87\xc3\x83O)'
-]
-
-
-"""
-
-"""
-
-
-impedimento = {
-	documento: "",
-	nome: "",
-	origem: "",
-	tipo_pessoa: "juridica",
-	data_cadastro: "",
-	data_update: "",
-	raw: {}
-}
-
-
-
-
-IMPEDIMENTO:
-Documento (chave-primaria)
-Nome (texto - Nome ou Razao Social)
-Origem Registro: CEIS ou CEPIM
-Tipo Pessoa: Fisica ou Juridica (CPF/CNPJ)
-Raw (texto - json)
-DataHora Cadastro (primeiro registro do arquivo)
-DataHora Update (do arquivo)
-
-
-
-
-def encerra():
-	print 'Getting encerramentos...'
-	encerra_raw = open('../raw/encerra.txt', 'r')
-
-	encerramentos = {}
-	for a in encerra_raw.readlines()[2:]:
-		try:
-			b = a.split('#')
-			if len(a.split('#')) == 5:
-				pl = b[0] + '-' + b[1] + '-' + ''.join(b[2].split('/'))
-			encerramentos[pl] = b[4].decode("iso-8859-1").strip()	
-		except:
-			print "error on " + pl
-	return encerramentos
-
-def projeta(encerramentos, ementas):
-	print 'Getting tramitacoes...'
-	arquivo = open('../raw/tramita.txt', 'r')
-	projetos = {}
-	for a in arquivo.readlines()[2:]:
-		b = a.split('#')
-		if len(a.split('#')) == 6:
-			pl = b[0] + '-' + b[1] + '-' + ''.join(b[2].split('/'))
-			tramite = {}
-			try:
-				tramite["data_ini"] = b[4]
-				tramite["data_fim"] = b[5].strip()
-				tramite["tempo"] = (datetime.strptime(b[5].strip(), "%d/%m/%Y") - datetime.strptime(b[4], "%d/%m/%Y")).days
-			except:
-				pass
-			tramite["unidade"] = b[3]
-
-			if projetos.has_key(pl):
-				projetos[pl]['tramite'].append(tramite)
-			else:
-				projetos[pl] = { 'id' : pl }
-				projetos[pl]['tramite'] = [tramite]
-				if encerramentos.has_key(pl):
-					projetos[pl]['encerramento'] = encerramentos[pl]
-				if ementas.has_key(pl):
-					projetos[pl]['ementa'] = ementas[pl]
-	return projetos
-
-"""
-
-
-
-def write_json(arquivo, projetos):
-	arquivo2 = open(arquivo, 'w')
-	arquivo2.write(json.dumps(projetos, sort_keys=True, indent=4, separators=(',', ': ')))
-	arquivo2.close()
-
-
-
-
-def upa_neguim():
+def save_elasticsearch():
 	print 'Connecting to ES...'
-	conn = pyes.ES('http://127.0.0.1:9200')
+	conn = pyes.ES(config["server"]) #, encoder="iso-8859-1")
 	try:
 		print 'Creating index...'
 		conn.indices.create_index("impedimentos")
 	except:
 		pass
+
+	print "ES encoder: "
+	print conn.encoder
+	print ""
 
 
 	mapping = {
@@ -232,45 +108,81 @@ def upa_neguim():
 
 
 
-def upa_neguim_old(projetos):
-	print 'Connecting to ES...'
-	conn = pyes.ES('http://127.0.0.1:9200')
-	try:
-		print 'Creating index...'
-		conn.indices.create_index("monitor")
-	except:
-		pass
-
-	mapping = {
-		"data_fim" : { "type" : "string", "analyzer" : "keyword" },
-		"data_ini" : { "type" : "date", "format" : "dd/MM/YYYY" }
-    }
-
-	print 'Mapping...'
-	conn.indices.put_mapping("projeto", {'properties': mapping}, ["monitor"])
-    
-	erros = 0
-	print 'Indexing!'
-	for v in projetos:
-		p = projetos[v]
-		conn.index(p, 'monitor', 'projeto', p['id'], bulk=True)
-		try:
-			conn.index(p, 'monitor', 'projeto', p['id'], bulk=True)
-		except:
-			print "erro"
-			erros = erros + 1
-	print erros
 
 
 
-def sample(dicionario, qtd=10):
-	i = 0;
-	for item in dicionario:
-		if i < qtd:
-			pprint.pprint(dicionario[item])
-			i = i + 1
-		else:
-			break
+def process_CEIS(force=False):
+	print ">>> CEIS <<<"
+	#TODO: verificar se ja existe o arquivo/processamento e zerar se FORCE=TRUE
+	last = check_transparencia("CEIS")
+	folder = download_file(last)
+	file_to_process = "%s/%s" % (folder, listdir(folder)[0])
+	print "processando CEIS..."
+	with open(file_to_process, 'r') as raw:
+		for a in raw.readlines()[1:]:
+			#try:
+				b = a.replace('\r\n', '').split('\t')
+				impedimento = {}
+				documento = b[7]
+				#print documento
+				if impedimentos.has_key(documento):
+					impedimento = impedimentos[documento]
+				else: #"sem impedimento"
+					impedimento = {
+						"documento": documento,
+						"nome": b[8].decode("iso-8859-1"),
+						"origem": "%s (%s)" % (b[2], b[3]),
+						"tipo_pessoa": "fisica" if len(documento) == 11 else "juridica",
+						"data_cadastro": "",
+						"data_update": "",
+						"raw":[]
+					}
+				impedimento["raw"].append(a.replace('\r\n', ''))
+				impedimentos[documento] = impedimento
+			#except:
+		#	print "error on " + b
+	return
+
+
+def process_CEPIM(force=False):
+	print ">>> CEPIM <<<"
+	#TODO: verificar se ja existe o arquivo/processamento e zerar se FORCE=TRUE
+	last = check_transparencia("CEPIM")
+	folder = download_file(last)
+	file_to_process = "%s/%s" % (folder, listdir(folder)[0])
+	print "processando CEPIM..."
+	with open(file_to_process, 'r') as raw:
+		for a in raw.readlines()[1:]:
+			#try:
+				b = a.replace('\r\n', '').split('\t')
+				impedimento = {}
+				documento = b[0]
+				if impedimentos.has_key(documento):
+					impedimento = impedimentos[documento]
+				else:
+					impedimento = {
+						"documento": documento,
+						"nome": b[1].decode("iso-8859-1"),
+						"origem": "%s" % (b[3]),
+						"tipo_pessoa": "fisica" if len(documento) == 11 else "juridica",
+						"data_cadastro": "",
+						"data_update": "",
+						"raw":[]
+					}
+				impedimento["raw"].append(a.replace('\r\n', ''))
+				impedimentos[documento] = impedimento
+			#except:
+			#	print "error on " + b		
+	return
+
+
+
+
+process_CEIS()
+process_CEPIM()
+
+save_file("../raw/impedimentos.json", impedimentos)
+save_elasticsearch()
 
 
 
@@ -278,18 +190,16 @@ def sample(dicionario, qtd=10):
 
 
 
-print "importing..."
-ceis()
-cepim()
-upa_neguim()
-print "import OK"
-
-with open("../raw/impedimentos.json", "w") as the_file:
-	the_file.write(json.dumps(impedimentos))
-print "file saved"
+#OK		TODO: verificar se existe a pasta
+#OK		TODO: baixar e extrair o arquivo na pasta correspondente
+#TODO: abrir o arquivo e importar para ElasticSearch
 
 
-#encerramentos = encerra()
-#projetos = projeta(encerramentos, ementas)
-#upa_neguim(projetos)
+
+
+
+
+
+
+
 
