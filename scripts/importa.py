@@ -22,12 +22,18 @@ import codecs
 
 
 
+#TODO: criar dois indices independentes
+#TODO: fazer a busca somando os indices
+
+
+
 
 
 
 
 config = {
-	"server": "http://127.0.0.1:9200"
+	#"server": "http://127.0.0.1:9200"
+	"server": "http://apps.thacker.com.br:9200"
 }
 
 
@@ -70,7 +76,7 @@ def decode_file(filename):
 def save_file(filename, json_data):
 	print "salvando arquivo json..."
 	with open(filename, "w") as the_file:
-		the_file.write(json.dumps(json_data, encoding="iso-8859-1"))
+		the_file.write(json.dumps(json_data, encoding="utf-8")) #iso-8859-1"))
 	print "file saved"
 
 
@@ -80,16 +86,50 @@ def save_file(filename, json_data):
 def save_elasticsearch():
 	print 'Connecting to ES...'
 	conn = pyes.ES(config["server"])
-	try:
-		print 'Creating index...'
-		conn.indices.create_index("impedimentos")
-	except:
-		pass
+
+	conn.delete_index_if_exists("ceis")
+	conn.delete_index_if_exists("cepim")
+	conn.refresh()
+
+	#try:
+	#	#conn.indices.create_index("impedimentos")
+	#except:
+	#	pass
+
+	print 'Creating index...'
+	conn.indices.create_index("ceis")
+	conn.indices.create_index("cepim")
 
 
-	mapping = {
+	#TODO: separar mapping de cada um dos tipos (Pedro vai mandar codigo que esta usando no Dicionario)
+	mapping_CEIS = {
 		"documento": { "type": "string", "analyzer" : "keyword"},
 		"tipo_pessoa": { "type": "string", "analyzer" : "keyword"},
+		"nome": { 
+			"type": "multi_field", 
+			"fields": {
+				"nome": { "type": "string", "index": "analyzed"},
+				"raw": { "type": "string", "index": "not_analyzed"}
+			}
+		}
+
+		#"nome": { "type": "string", "analyzer" : "keyword"},
+		#"origem": { "type": "string", "analyzer" : "keyword"},
+		#"data_fim" : { "type" : "string", "analyzer" : "keyword" },
+		#"data_ini" : { "type" : "date", "format" : "dd/MM/YYYY" }
+    }
+
+	mapping_CEPIM = {
+		"documento": { "type": "string", "analyzer" : "keyword"},
+		"tipo_pessoa": { "type": "string", "analyzer" : "keyword"},
+		"nome": { 
+			"type": "multi_field", 
+			"fields": {
+				"nome": { "type": "string", "index": "analyzed"},
+				"raw": { "type": "string", "index": "not_analyzed"}
+			}
+		}
+
 		#"nome": { "type": "string", "analyzer" : "keyword"},
 		#"origem": { "type": "string", "analyzer" : "keyword"},
 		#"data_fim" : { "type" : "string", "analyzer" : "keyword" },
@@ -97,27 +137,21 @@ def save_elasticsearch():
     }
 
 	print 'Mapping...'
-	conn.indices.put_mapping("CEIS", {'properties': mapping}, ["impedimentos"])
-	conn.indices.put_mapping("CEPIM", {'properties': mapping}, ["impedimentos"])
+	#conn.indices.put_mapping("CEIS", {'properties': mapping}, ["impedimentos"])
+	#conn.indices.put_mapping("CEPIM", {'properties': mapping}, ["impedimentos"])
+	conn.indices.put_mapping("ceis", {'properties': mapping_CEIS}, ["ceis"])
+	conn.indices.put_mapping("cepim", {'properties': mapping_CEPIM}, ["cepim"])
     
 	erros = 0
 	print 'Indexing!'
 	for v in impedimentos:
-		#print v
 		p = impedimentos[v]
-		#print p
+		conn.index(p, p['tabela'].lower(), "impedimento", p['documento'], bulk=True)
+		#conn.index(p, 'impedimentos', p['tabela'], p['documento'], bulk=True)
 
-		conn.index(p, 'impedimentos', p['tabela'], p['documento'], bulk=True)
-		try:
-			conn.index(p, 'impedimentos', p['tabela'], p['documento'], bulk=True)
-		except:
-			print "erro INDICE"
-			erros = erros + 1
+	conn.refresh()
 
 	print "%d erro(s)." % erros
-
-
-
 
 
 
@@ -136,7 +170,8 @@ def process_CEIS(force=False):
 	decoded_file = decode_file(file_to_process)
 
 	print "processando CEIS..."
-	with open(decoded_file, 'r') as raw:
+	with codecs.open(file_to_process, 'r', encoding='iso-8859-1') as raw:	
+		#with open(decoded_file, 'r') as raw:
 		for a in raw.readlines()[1:]:
 			#try:
 				b = a.replace('\r\n', '').split('\t')
@@ -148,15 +183,17 @@ def process_CEIS(force=False):
 				else: #"sem impedimento"
 					impedimento = {
 						"documento": documento,
-						"nome": b[8].decode("iso-8859-1"),
+						"nome": b[8], #b[8].decode("iso-8859-1"),
 						"origem": "%s (%s)" % (b[2], b[3]),
 						"tipo_pessoa": "fisica" if len(documento) == 11 else "juridica",
 						"data_cadastro": "",
 						"data_update": "",
 						"raw":[],
-						"tabela": "CEIS"
+						"tabela": "CEIS",
+						"bloqueios":[],
 					}
-				impedimento["raw"].append(a.decode("iso-8859-1").replace('\r\n', ''))
+				#impedimento["raw"].append(a.decode("iso-8859-1").replace('\r\n', ''))
+				impedimento["raw"].append(a.replace('\r\n', ''))
 				impedimentos[documento] = impedimento
 			#except:
 		#	print "error on " + b
@@ -179,26 +216,34 @@ def process_CEPIM(force=False):
 	file_to_process = "%s/%s" % (folder, listdir(folder)[0])
 	decoded_file = decode_file(file_to_process)
 	print "processando CEPIM..."
-	with open(decoded_file, 'r') as raw:
+	with codecs.open(file_to_process, 'r', encoding='iso-8859-1') as raw:	
+		#with open(decoded_file, 'r') as raw:
 		for a in raw.readlines()[1:]:
 			#try:
 				b = a.replace('\r\n', '').split('\t')
 				impedimento = {}
 				documento = b[0]
 				if impedimentos.has_key(documento):
+					print "tem chave"
 					impedimento = impedimentos[documento]
 				else:
+					print "novo"
 					impedimento = {
 						"documento": documento,
-						"nome": b[1].decode("iso-8859-1").encode('utf8'),
+						"nome": b[1], #.decode("iso-8859-1").encode('utf8'),
 						"origem": "%s" % (b[3]),
 						"tipo_pessoa": "fisica" if len(documento) == 11 else "juridica",
 						"data_cadastro": "",
 						"data_update": "",
 						"raw":[],
-						"tabela": "CEPIM"
+						"tabela": "CEPIM",
+						"bloqueios":[],
 					}
-				impedimento["raw"].append(a.decode("iso-8859-1").encode('utf8').replace('\r\n', ''))
+
+				impedimento["raw"].append(a.replace('\r\n', ''))
+				impedimento["bloqueios"].append({"convenio": b[2], "info": b[4]})
+
+				#impedimento["raw"].append(a.decode("iso-8859-1").encode('utf8').replace('\r\n', ''))
 				impedimentos[documento] = impedimento
 			#except:
 			#	print "error on " + b		

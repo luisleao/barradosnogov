@@ -8,7 +8,8 @@
 
 
 	<!-- viewport meta to reset iPhone inital scale -->
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<meta name="HandheldFriendly" content="true"/>
 
@@ -18,8 +19,15 @@
 	<!--[if (lt IE 9)&(!IEMobile)]>
 	<link rel="stylesheet" type="text/css" href="enhanced.css" />
 	<![endif]-->
+<!--
 	<script type="text/javascript" src="js/modernizr.js"></script>
+-->
 
+	<script src="js/jquery.min.js"></script>
+	<script src="js/tempo.min.js"></script>
+
+	<script type="text/javascript" src="js/settings.js"></script>
+	<script type="text/javascript" src="js/main.js"></script>
 	<!-- css3-mediaqueries.js for IE8 or older -->
 	<!--[if lt IE 9]>
 		<script src="http://css3-mediaqueries-js.googlecode.com/svn/trunk/css3-mediaqueries.js"></script>
@@ -39,6 +47,10 @@
 		}
 
 
+		#impedimentos, #detalhe_empresa {
+			display: none;
+		}
+
 		/* REMOVER ISSO */
 		.spacer {
 			margin-bottom: 50px;
@@ -47,9 +59,6 @@
 			/*display: none;*/
 		}
 		
-		#detalhe_empresa {
-			display: block !important;
-		}
 
 
 		.header {
@@ -57,7 +66,7 @@
 		}
 
 		.detalhe_impedimento {
-			padding: 0 1em .5em;
+			padding: 0 3em .3em;
 			font-size: .9em;
 			/*display: none;*/
 		}
@@ -68,12 +77,12 @@
 		}
 
 		.list li {
-			background-color: #ababab;
-			margin-bottom: 0.05em;
+			background-color: #eee;
+			margin-bottom: 1px;
 			padding: 0 .2em;
 		}
 		.list li:hover {
-			background-color: #333;
+			background-color: #ddd;
 		}
 
 		.list li:hover a {
@@ -87,10 +96,10 @@
 		}
 
 
-		#result .list a {
+		#impedimentos .list a {
 			display: block;
 		}
-		#result .list .id {
+		#impedimentos .list .id {
 			display: block;
 			font-size: .8em;
 			color: #777;
@@ -108,7 +117,7 @@
 
 
 
-		#consulta {
+		#buscar {
 
 			background: -moz-linear-gradient(top, #333 0%, rgba(255, 255, 255, 0) 100%); 
 			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#333), color-stop(100%,rgba(255, 255, 255, 0))); 
@@ -132,23 +141,6 @@
 	<script type="text/javascript">
 
 
-		var ehNumero = function(numero) {
-			var patt = /(^\d{1,}$)/;
-			return patt.test(numero);
-		};
-
-
-		window.addEventListener("load",function() {
-
-			// Set a timeout...
-			/*
-			setTimeout(function(){
-				// Hide the address bar!
-				window.scrollTo(0, 1);
-			}, 0);
-			*/
-		});
-
 	</script>
 
 </head>
@@ -167,8 +159,8 @@
 
 
 
-		<div id="consulta" class="spacer">
-	            <form id="search" action="#" method="post" class="search">
+		<div id="buscar" class="spacer">
+	            <form id="search" action="#" method="" class="search">
 	                <fieldset>
 	                    <legend>Procurar empresa ou pessoa física impedida</legend>
 	                    <label for="search-data">Procurar</label>
@@ -176,23 +168,27 @@
 	                    <input type="submit" value="Consultar" />
 	                </fieldset>
 	            </form>
-
 		</div>
 
 
 
 
-		<div id="result" class="spacer">
+		<div id="impedimentos" class="spacer">
 
 			<div class="header">
-				<h1>Resultado da busca por "[FULANO]"</h1>
-				<h2>[3 registros encontrados]</h2>
+				<h1>Resultado da busca por "<span>[PALAVRA]</span>"</h1>
+				<h2>[N registro(s) encontrado(s)]</h2>
 			</div>
 
 			<ul class="list">
+
+				<li data-template><a href="#{{ documento }}"><span class="nome">{{ nome }}</span> <span class="id">{{ documento_formatado }}</span></a></li>
+
+				<!--
 				<li><a href="#"><span class="nome">FULANO &amp; COMPANHIA ARTIGOS ESPORTIVOS LTDA</span> <span class="id">12.345.678/0001-00</span></a></li>
 				<li><a href="#"><span class="nome">INCORPORADORA FULANO S/A</span> <span class="id">12.345.678/0001-00</span></a></li>
 				<li><a href="#"><span class="nome">FULANO DE OLIVEIRA</span> <span class="id">123.456.789-00</span></a></li>
+				-->
 			</ul>
 
 		</div>
@@ -202,39 +198,48 @@
 
 
 
-		<div id="detalhe_empresa" class="spacer">
+		<div id="detalhe_empresa" class="spacer" >
 			
-			<div class="header">
-				<h1>12.345.678/0001-00</h1>
-				<h2>Fulano &amp; Companhia Artigos Esportivos Ltda.</h2>
+			<div data-template>
+				<div class="header">
+					<h1>{{ documento_formatado }}</h1>
+					<h2>{{ nome }}</h2>
+				</div>
+
+				<ul class="list">
+
+					<li>
+						<div class="detalhe_impedimento">
+							{{ tabela }}
+							<b>{{ origem }}</b>
+							<!--
+							Data Início Sanção	{{ data_inicio }}<br/>
+							Data Final Sanção	{{ data_termino }} <br/>
+							Origem Informações	Diário Oficial da União Seção 3 pág 082<br/>
+							Data Origem Informações	12/07/2013<br/>
+							Tipo Sanção	Suspensão - Lei de Licitações<br/>
+							-->
+
+							{{ data_cadastro }}
+							{{ data_update }}
+							{{ tipo_pessoa }}
+						</div>
+					</li>
+
+<!--
+					<li>
+						<a href="#" class="top">MINISTERIO DA CIENCIA, TECNOLOGIA E INOVACAO</a>
+						<div class="detalhe_impedimento">
+
+							Número Convênio	428219<br/>
+							Motivo Impedimento	IRREGULARIDADES NA EXECUÇÃO<br/>
+						</div>
+					</li>
+-->
+
+
+				</ul>
 			</div>
-
-			<ul class="list">
-
-				<li>
-					<a href="#" class="top">CAIXA ECONÔMICA FEDERAL</a>
-					<div class="detalhe_impedimento">
-						Data Início Sanção	02/05/2013<br/>
-						Data Final Sanção	01/05/2014<br/>
-						Origem Informações	Diário Oficial da União Seção 3 pág 082<br/>
-						Data Origem Informações	12/07/2013<br/>
-						Tipo Sanção	Suspensão - Lei de Licitações<br/>
-					</div>
-				</li>
-
-
-				<li>
-					<a href="#" class="top">MINISTERIO DA CIENCIA, TECNOLOGIA E INOVACAO</a>
-					<div class="detalhe_impedimento">
-
-						Número Convênio	428219<br/>
-						Motivo Impedimento	IRREGULARIDADES NA EXECUÇÃO<br/>
-					</div>
-				</li>
-
-
-
-			</ul>
 
 		</div>
 
@@ -249,6 +254,9 @@
 
 
 	</div>
+
+
+	<a href="https://github.com/luisleao/impedimentos_CEISCEPIM"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>	
 
 </body>
 </html>
