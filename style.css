@@ -7,7 +7,7 @@ End Colors*/
 
 
 /************Reset**************/
-html, body, div, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, ol, ul, li, form, fieldset, legend, label, table, header, footer, nav, section { 
+html, body, div, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, form, fieldset, legend, label, table, header, footer, nav, section { 
 	margin: 0; 
 	padding: 0;
 	border: 0;
@@ -26,7 +26,135 @@ legend {
 
 
 
+	#sobre, #impedimentos {
+		padding: 1em;
+	}
 
+	#sobre a {
+		color: #000;
+		text-decoration: underline;
+	}
+
+		ul li, ul li a{
+
+			-webkit-transition: all .3s ease-in-out;
+			-moz-transition: all .3s ease-in-out;
+			-o-transition: all .3s ease-in-out;
+			transition: all .3s ease-in-out;
+
+		}
+
+
+		#impedimentos, #detalhe_empresa {
+			display: none;
+		}
+
+		/* REMOVER ISSO */
+		.spacer {
+			margin-bottom: 50px;
+			padding: 0;
+			overflow: hidden;
+			/*display: none;*/
+		}
+		
+
+
+		.header {
+			padding: 0 .3em;
+		}
+
+		.detalhe_impedimento {
+			padding: 0 3em .3em;
+			font-size: .9em;
+			/*display: none;*/
+		}
+
+
+		.list {
+			margin: 2em 0;
+			padding: 0;
+		}
+
+
+		.list .item {
+			border-top: solid 1px #444;
+			margin-bottom: 30px;
+			padding-bottom: 10px;
+		}
+
+		.list .item ul {
+			list-style-type: square !important;
+		}
+
+		.list li {
+			background-color: #eee;
+			margin-bottom: 5px;
+			padding: 0 .2em;
+		}
+		/*
+		.list li:hover {
+			background-color: #ddd;
+		}
+
+		.list li:hover a {
+			color: #fff;
+		}
+		*/
+
+		.list li a {
+			display: block;
+			padding: 0.2em;
+			color: #000;
+		}
+
+
+		#impedimentos .list a {
+			display: block;
+		}
+		#impedimentos .list .id {
+			display: block;
+			font-size: .8em;
+			color: #777;
+		}
+
+
+		header h1 a {
+			color: #fff !important;
+		}
+
+		.footer {
+			padding: .5em;
+		}
+
+
+
+.header {
+	text-align: center;
+}
+
+
+.red {
+	color: #ff0000;
+}
+
+
+		#buscar {
+
+			background: -moz-linear-gradient(top, #333 0%, rgba(255, 255, 255, 0) 100%); 
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#333), color-stop(100%,rgba(255, 255, 255, 0))); 
+			background: -webkit-linear-gradient(top, #333 0%,rgba(255, 255, 255, 0) 100%); 
+			background: -o-linear-gradient(top, #333 0%,rgba(255, 255, 255, 0) 100%);
+			background: -ms-linear-gradient(top, #333 0%,rgba(255, 255, 255, 0) 100%); 
+			background: linear-gradient(top, #333 0%,rgba(255, 255, 255, 0) 100%);
+
+
+		}
+
+
+
+		small {
+			font-size: .7em;
+		}
 
 
 

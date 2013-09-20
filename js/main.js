@@ -8,10 +8,12 @@ q = {
             "default_operator" : "AND",
         }
     },
-    "size": 100,
+    "size": 50,
     "from" : 0,
-    "sort" : [
-        "nome"
+    "sort" : [{
+            "nome.untouched": "asc"
+        },
+        "_score"
     ]
 };
 
@@ -56,32 +58,16 @@ function render(q) {
     			//mensagem não encontrado
     			alert("Nenhum registro encontrado!");
     			break;
-    		case 1:
-    			//exibir detalhe
-				tempo_detalhe.clear();
-				//if (window.location.hash.slice(1) != data.hits.hits[0]['_source'].documento)
-    			//	window.location.hash = data.hits.hits[0]['_source'].documento;
-
-    			
-    			$("#buscar").fadeOut("slow", function(){
-    				//render
-    				//var impedimento = data.hits.hits[0]['_source'];
-		            tempo_detalhe.append(data.hits.hits[0]['_source']);
-
-    				$("#detalhe_empresa").fadeIn();
-    			})
-
-    			break;
 
     		default:
     			//TODO: listar registros
-				tempo_impedimentos.clear();
+				tempo.clear();
 
     			$("#impedimentos h2").text(data.hits.total + " resultado(s) encontrado(s)");
     			$("#buscar").fadeOut("slow", function(){
     				$.each(data.hits.hits, function (index, t) {
 						console.log(t);
-						tempo_impedimentos.append(t['_source'])
+						tempo.append(t['_source'])
 					});
     				$("#impedimentos").fadeIn();
     			})
@@ -129,8 +115,7 @@ var hashChanged = function() {
 
 $(document).ready(function () {
 
-    tempo_impedimentos = Tempo.prepare("impedimentos");
-    tempo_detalhe = Tempo.prepare("detalhe_empresa");
+    tempo = Tempo.prepare("impedimentos");
 
     if (window.location.hash) {
     	//TODO: verificar se passou documento no hash
