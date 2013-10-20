@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*- 
 
 
@@ -32,10 +33,10 @@ import codecs
 
 
 
-config = {
+CONFIG = {
 	"homolog": "http://127.0.0.1:9200",
 	"prod": "http://apps.thacker.com.br:9200",
-	"current": "homolog"
+	"current": "prod"
 	#"server": "http://apps.thacker.com.br:9200"
 }
 
@@ -122,7 +123,7 @@ def save_file(filename, json_data):
 
 def save_elasticsearch():
 	print 'Connecting to ES...'
-	conn = pyes.ES(config[config["current"]])
+	conn = pyes.ES(CONFIG[CONFIG["current"]])
 
 	conn.delete_index_if_exists("ceis")
 	conn.delete_index_if_exists("cepim")
@@ -359,8 +360,8 @@ print "***** %s *****" % datetime.now().strftime("%d/%m/%Y")
 try:
     arg = sys.argv[1]
 
-    if arg in config:
-    	config["current"] = arg
+    if arg in CONFIG:
+    	CONFIG["current"] = arg
     else:
     	print "Parametro invalido: %s" % arg
     	sys.exit(1)
@@ -368,9 +369,7 @@ try:
 except IndexError:
 	pass
 
-
-
-print "enviando para %s..." % config["current"].upper()
+print "enviando para %s..." % CONFIG["current"].upper()
 
 process_CEIS()
 process_CEPIM()
